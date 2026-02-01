@@ -127,30 +127,43 @@ def create_feature_engineering_pipeline():
 # ========== TRANSFORMER 3 : ENCODAGE ==========
 
 class CategoricalEncoder(BaseEstimator, TransformerMixin):
-    """Encode les variables catégorielles"""
+    """
+    Encode avec catégorie UNKNOWN pour valeurs jamais vues
+    """
     
     def fit(self, X, y=None):
-        self.encoders_ = {}  # ← Attribut avec underscore
+        self.encoders_ = {}
         self.onehot_columns_ = {}
+        self.known_categories_ = {}  # Mémoriser les catégories connues
         
         categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
         
         for col in categorical_cols:
+            # Mémoriser les catégories connues
+            self.known_categories_[col] = set(X[col].unique())
+            
             unique_values = X[col].nunique()
             
             if unique_values == 2:
+                # Label Encoding
                 le = LabelEncoder()
-                le.fit(X[col])
+                # Ajouter 'UNKNOWN' aux classes possibles
+                all_values = list(X[col].unique()) + ['UNKNOWN']
+                le.fit(all_values)
                 self.encoders_[col] = ('label', le)
             
             elif unique_values <= 10:
+                # One-Hot Encoding
+                # On mémorise les colonnes ET on ajoute une colonne UNKNOWN
                 dummies = pd.get_dummies(X[col], prefix=col, drop_first=True)
+                self.onehot_columns_[col] = dummies.columns.tolist() + [f'{col}_UNKNOWN']
                 self.encoders_[col] = ('onehot', None)
-                self.onehot_columns_[col] = dummies.columns.tolist()
             
             else:
+                # Label Encoding pour >10 catégories
                 le = LabelEncoder()
-                le.fit(X[col])
+                all_values = list(X[col].unique()) + ['UNKNOWN']
+                le.fit(all_values)
                 self.encoders_[col] = ('label', le)
         
         return self
@@ -163,25 +176,32 @@ class CategoricalEncoder(BaseEstimator, TransformerMixin):
                 continue
             
             if method == 'label':
-                X_encoded[col] = X_encoded[col].map(
-                    lambda x: x if x in encoder.classes_ else encoder.classes_[0]
+                # Remplacer valeurs inconnues par 'UNKNOWN'
+                X_encoded[col] = X_encoded[col].apply(
+                    lambda x: x if x in self.known_categories_[col] else 'UNKNOWN'
                 )
                 X_encoded[col] = encoder.transform(X_encoded[col])
             
             elif method == 'onehot':
+                # Identifier les valeurs inconnues
+                unknown_mask = ~X_encoded[col].isin(self.known_categories_[col])
+                
+                # Créer dummies
                 dummies = pd.get_dummies(X_encoded[col], prefix=col, drop_first=True)
                 
-                for dummy_col in self.onehot_columns_[col]:
-                    if dummy_col not in dummies.columns:
-                        dummies[dummy_col] = 0
+                # Créer DataFrame final avec toutes les colonnes attendues
+                final_dummies = pd.DataFrame(0, index=X_encoded.index, columns=self.onehot_columns_[col])
                 
-                extra_cols = set(dummies.columns) - set(self.onehot_columns_[col])
-                for c in extra_cols:
-                    dummies = dummies.drop(columns=[c])
+                # Remplir avec les valeurs connues
+                for dummy_col in dummies.columns:
+                    if dummy_col in final_dummies.columns:
+                        final_dummies[dummy_col] = dummies[dummy_col]
                 
-                dummies = dummies[self.onehot_columns_[col]]
+                # Mettre 1 dans la colonne UNKNOWN pour les nouvelles modalités
+                if unknown_mask.any():
+                    final_dummies.loc[unknown_mask, f'{col}_UNKNOWN'] = 1
                 
-                X_encoded = pd.concat([X_encoded, dummies], axis=1)
+                X_encoded = pd.concat([X_encoded, final_dummies], axis=1)
                 X_encoded = X_encoded.drop(columns=[col])
         
         return X_encoded
@@ -191,6 +211,8 @@ def create_encoding_pipeline():
     return Pipeline([
         ('encoder', CategoricalEncoder())
     ])
+
+
 
 
 # ========== TRANSFORMER 4 : SCALING ==========
