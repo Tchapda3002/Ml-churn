@@ -1,0 +1,1 @@
+{'dataset_shape': (165034, 14), 'churn_rate': np.float64(21.159882206090867), 'imbalance_ratio': np.float64(3.72592422897397), 'missing_values': np.int64(0), 'top_correlated_features': {'Age': 0.34076816340758503, 'NumOfProducts': 0.2145542315849037, 'IsActiveMember': 0.2102370257921396, 'Balance': 0.129742860484013, 'CreditScore': 0.0273826000616512}}
