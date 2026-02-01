@@ -1,0 +1,29 @@
+[project]
+name = "projet-machine-learning-no2"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Wilfred"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas (>=2,<3)",
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "scipy (>=1.17.0,<2.0.0)",
+    "plotly (>=6.5.2,<7.0.0)",
+    "scikit-learn (>=1.8.0,<2.0.0)",
+    "imblearn (>=0.0,<0.1)",
+    "xgboost (>=3.1.3,<4.0.0)",
+    "lightgbm (>=4.6.0,<5.0.0)",
+    "catboost (>=1.2.8,<2.0.0)",
+    "fastapi (>=0.128.0,<0.129.0)",
+    "unicorn (>=2.1.4,<3.0.0)",
+    "uvicorn (>=0.40.0,<0.41.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

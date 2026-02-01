@@ -29,7 +29,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["POST"],
     allow_headers=["*"],
 )
 
@@ -349,8 +349,9 @@ async def predict_batch(request: BatchPredictionRequest):
             
             # Prediction
             prediction = model.predict(features)[0]
-            probability = model.predict_proba(features)[0][1]
             
+            probability = model.predict_proba(features)[0][1]
+
             risk_level = get_risk_level(probability)
             confidence = abs(probability - 0.5) * 2
             recommended_action = get_recommended_action(probability, risk_level)
