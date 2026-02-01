@@ -2,19 +2,16 @@ __pycache__/
 .ipynb_checkpoints/
 .env
 
-
-
 # Python
-__pycache__/
 *.pyc
 
 # Environnements
-.env
 .venv
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
 
-# Environments
-.env
-__pycache__/
+# Node.js
+node_modules/
+dist/
+.DS_Store
