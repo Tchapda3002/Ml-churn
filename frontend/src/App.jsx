@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Header from './components/Header';
 import SinglePrediction from './components/SinglePrediction';
 import BatchPrediction from './components/BatchPrediction';
@@ -25,12 +25,6 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const pageVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -20 },
-  };
-
   return (
     <div className="min-h-screen">
       <div className="noise-overlay" />
@@ -44,46 +38,33 @@ function App() {
       <Header healthStatus={healthStatus} activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="relative z-10 px-6 py-10">
-        <AnimatePresence mode="wait">
-          {activeTab === 'single' && (
-            <motion.div
-              key="single"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-            >
-              <SinglePrediction />
-            </motion.div>
-          )}
+        {/* Les composants restent montés, seule la visibilité change */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ display: activeTab === 'single' ? 'block' : 'none' }}
+        >
+          <SinglePrediction />
+        </motion.div>
 
-          {activeTab === 'batch' && (
-            <motion.div
-              key="batch"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-            >
-              <BatchPrediction />
-            </motion.div>
-          )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ display: activeTab === 'batch' ? 'block' : 'none' }}
+        >
+          <BatchPrediction />
+        </motion.div>
 
-          {activeTab === 'validate' && (
-            <motion.div
-              key="validate"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-            >
-              <ValidationMode />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ display: activeTab === 'validate' ? 'block' : 'none' }}
+        >
+          <ValidationMode />
+        </motion.div>
       </main>
 
       {/* Footer */}
