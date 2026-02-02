@@ -1,247 +1,231 @@
 # src/preprocessing.py - VERSION COMPLÈTE CORRIGÉE
 
 import pandas as pd
-import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, RobustScaler, LabelEncoder
+from sklearn.preprocessing import LabelEncoder, RobustScaler, StandardScaler
 
 # ========== FONCTION DE BASE ==========
+
 
 def clean_data_base(df):
     """Votre fonction clean_data"""
     df_clean = df.copy()
-    
+
     # Supprimer colonnes ID
     cols_to_drop = []
-    for col in ['id', 'CustomerId', 'Surname']:
+    for col in ["id", "CustomerId", "Surname"]:
         if col in df_clean.columns:
             cols_to_drop.append(col)
-    
+
     if cols_to_drop:
         df_clean = df_clean.drop(columns=cols_to_drop)
-    
+
     return df_clean
 
 
 # ========== TRANSFORMER 1 : NETTOYAGE (CORRIGÉ) ==========
 
+
 class DataCleaner(BaseEstimator, TransformerMixin):
     """Nettoyage basique"""
-    
+
     def fit(self, X, y=None):
         self.is_fitted_ = True  # ← Obligatoire pour sklearn
         return self
-    
+
     def transform(self, X):
         return clean_data_base(X)
 
 
 def create_cleaning_pipeline():
-    return Pipeline([
-        ('cleaner', DataCleaner())
-    ])
+    return Pipeline([("cleaner", DataCleaner())])
 
 
 # ========== TRANSFORMER 2 : FEATURE ENGINEERING (CORRIGÉ) ==========
 
+
 class FeatureEngineer(BaseEstimator, TransformerMixin):
     """Crée les features"""
-    
+
     def fit(self, X, y=None):
         # Mémoriser les bins calculés sur train
         self.bins_ = {}  # ← Attribut avec underscore
-        
-        if 'Age' in X.columns:
-            self.bins_['Age'] = [0, 30, 40, 50, 100]
-            self.age_labels_ = ['Young', 'Adult', 'Middle', 'Senior']
-        
-        if 'Tenure' in X.columns:
-            self.bins_['Tenure'] = [-1, 2, 5, 10]
-            self.tenure_labels_ = ['New', 'Regular', 'Loyal']
-        
-        if 'CreditScore' in X.columns:
-            self.bins_['CreditScore'] = [0, 600, 700, 850]
-            self.credit_labels_ = ['Poor', 'Good', 'Excellent']
-        
+
+        if "Age" in X.columns:
+            self.bins_["Age"] = [0, 30, 40, 50, 100]
+            self.age_labels_ = ["Young", "Adult", "Middle", "Senior"]
+
+        if "Tenure" in X.columns:
+            self.bins_["Tenure"] = [-1, 2, 5, 10]
+            self.tenure_labels_ = ["New", "Regular", "Loyal"]
+
+        if "CreditScore" in X.columns:
+            self.bins_["CreditScore"] = [0, 600, 700, 850]
+            self.credit_labels_ = ["Poor", "Good", "Excellent"]
+
         return self
-    
+
     def transform(self, X):
         df_new = X.copy()
-        
+
         # 1. BalanceSalaryRatio
-        if 'Balance' in df_new.columns and 'EstimatedSalary' in df_new.columns:
-            df_new['BalanceSalaryRatio'] = df_new['Balance'] / (df_new['EstimatedSalary'] + 1)
-        
+        if "Balance" in df_new.columns and "EstimatedSalary" in df_new.columns:
+            df_new["BalanceSalaryRatio"] = df_new["Balance"] / (df_new["EstimatedSalary"] + 1)
+
         # 2. AgeGroup
-        if 'Age' in df_new.columns and 'Age' in self.bins_:
-            df_new['AgeGroup'] = pd.cut(df_new['Age'], 
-                                        bins=self.bins_['Age'],
-                                        labels=self.age_labels_)
-        
+        if "Age" in df_new.columns and "Age" in self.bins_:
+            df_new["AgeGroup"] = pd.cut(df_new["Age"], bins=self.bins_["Age"], labels=self.age_labels_)
+
         # 3. TenureGroup
-        if 'Tenure' in df_new.columns and 'Tenure' in self.bins_:
-            df_new['TenureGroup'] = pd.cut(df_new['Tenure'],
-                                           bins=self.bins_['Tenure'],
-                                           labels=self.tenure_labels_)
-        
+        if "Tenure" in df_new.columns and "Tenure" in self.bins_:
+            df_new["TenureGroup"] = pd.cut(df_new["Tenure"], bins=self.bins_["Tenure"], labels=self.tenure_labels_)
+
         # 4. CreditScoreGroup
-        if 'CreditScore' in df_new.columns and 'CreditScore' in self.bins_:
-            df_new['CreditScoreGroup'] = pd.cut(df_new['CreditScore'],
-                                                bins=self.bins_['CreditScore'],
-                                                labels=self.credit_labels_)
-        
-        # 5. IsZeroBalance
-        if 'Balance' in df_new.columns:
-            df_new['IsZeroBalance'] = (df_new['Balance'] == 0).astype(int)
-        
-        # 6. HasMultipleProducts
-        if 'NumOfProducts' in df_new.columns:
-            df_new['HasMultipleProducts'] = (df_new['NumOfProducts'] > 1).astype(int)
-        
-        # 7. EngagementScore
-        if all(col in df_new.columns for col in ['IsActiveMember', 'HasCrCard', 'NumOfProducts']):
-            df_new['EngagementScore'] = (
-                df_new['IsActiveMember'] + 
-                df_new['HasCrCard'] + 
-                (df_new['NumOfProducts'] / 4)
+        if "CreditScore" in df_new.columns and "CreditScore" in self.bins_:
+            df_new["CreditScoreGroup"] = pd.cut(
+                df_new["CreditScore"], bins=self.bins_["CreditScore"], labels=self.credit_labels_
             )
-        
+
+        # 5. IsZeroBalance
+        if "Balance" in df_new.columns:
+            df_new["IsZeroBalance"] = (df_new["Balance"] == 0).astype(int)
+
+        # 6. HasMultipleProducts
+        if "NumOfProducts" in df_new.columns:
+            df_new["HasMultipleProducts"] = (df_new["NumOfProducts"] > 1).astype(int)
+
+        # 7. EngagementScore
+        if all(col in df_new.columns for col in ["IsActiveMember", "HasCrCard", "NumOfProducts"]):
+            df_new["EngagementScore"] = df_new["IsActiveMember"] + df_new["HasCrCard"] + (df_new["NumOfProducts"] / 4)
+
         # 8. Age_Balance_Interaction
-        if 'Age' in df_new.columns and 'Balance' in df_new.columns:
-            df_new['Age_Balance_Interaction'] = df_new['Age'] * df_new['Balance'] / 100000
-        
+        if "Age" in df_new.columns and "Balance" in df_new.columns:
+            df_new["Age_Balance_Interaction"] = df_new["Age"] * df_new["Balance"] / 100000
+
         # 9. TenureAgeRatio
-        if 'Tenure' in df_new.columns and 'Age' in df_new.columns:
-            df_new['TenureAgeRatio'] = df_new['Tenure'] / df_new['Age']
-        
+        if "Tenure" in df_new.columns and "Age" in df_new.columns:
+            df_new["TenureAgeRatio"] = df_new["Tenure"] / df_new["Age"]
+
         return df_new
 
 
 def create_feature_engineering_pipeline():
-    return Pipeline([
-        ('feature_engineer', FeatureEngineer())
-    ])
+    return Pipeline([("feature_engineer", FeatureEngineer())])
 
 
 # ========== TRANSFORMER 3 : ENCODAGE ==========
+
 
 class CategoricalEncoder(BaseEstimator, TransformerMixin):
     """
     Encode avec catégorie UNKNOWN pour valeurs jamais vues
     """
-    
+
     def fit(self, X, y=None):
         self.encoders_ = {}
         self.onehot_columns_ = {}
         self.known_categories_ = {}  # Mémoriser les catégories connues
-        
-        categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
-        
+
+        categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+
         for col in categorical_cols:
             # Mémoriser les catégories connues
             self.known_categories_[col] = set(X[col].unique())
-            
+
             unique_values = X[col].nunique()
-            
+
             if unique_values == 2:
                 # Label Encoding
                 le = LabelEncoder()
                 # Ajouter 'UNKNOWN' aux classes possibles
-                all_values = list(X[col].unique()) + ['UNKNOWN']
+                all_values = list(X[col].unique()) + ["UNKNOWN"]
                 le.fit(all_values)
-                self.encoders_[col] = ('label', le)
-            
+                self.encoders_[col] = ("label", le)
+
             elif unique_values <= 10:
                 # One-Hot Encoding
                 # On mémorise les colonnes ET on ajoute une colonne UNKNOWN
                 dummies = pd.get_dummies(X[col], prefix=col, drop_first=True)
-                self.onehot_columns_[col] = dummies.columns.tolist() + [f'{col}_UNKNOWN']
-                self.encoders_[col] = ('onehot', None)
-            
+                self.onehot_columns_[col] = dummies.columns.tolist() + [f"{col}_UNKNOWN"]
+                self.encoders_[col] = ("onehot", None)
+
             else:
                 # Label Encoding pour >10 catégories
                 le = LabelEncoder()
-                all_values = list(X[col].unique()) + ['UNKNOWN']
+                all_values = list(X[col].unique()) + ["UNKNOWN"]
                 le.fit(all_values)
-                self.encoders_[col] = ('label', le)
-        
+                self.encoders_[col] = ("label", le)
+
         return self
-    
+
     def transform(self, X):
         X_encoded = X.copy()
-        
+
         for col, (method, encoder) in self.encoders_.items():
             if col not in X_encoded.columns:
                 continue
-            
-            if method == 'label':
+
+            if method == "label":
                 # Remplacer valeurs inconnues par 'UNKNOWN'
-                X_encoded[col] = X_encoded[col].apply(
-                    lambda x: x if x in self.known_categories_[col] else 'UNKNOWN'
-                )
+                X_encoded[col] = X_encoded[col].apply(lambda x: x if x in self.known_categories_[col] else "UNKNOWN")
                 X_encoded[col] = encoder.transform(X_encoded[col])
-            
-            elif method == 'onehot':
+
+            elif method == "onehot":
                 # Identifier les valeurs inconnues
                 unknown_mask = ~X_encoded[col].isin(self.known_categories_[col])
-                
+
                 # Créer dummies
                 dummies = pd.get_dummies(X_encoded[col], prefix=col, drop_first=True)
-                
+
                 # Créer DataFrame final avec toutes les colonnes attendues
                 final_dummies = pd.DataFrame(0, index=X_encoded.index, columns=self.onehot_columns_[col])
-                
+
                 # Remplir avec les valeurs connues
                 for dummy_col in dummies.columns:
                     if dummy_col in final_dummies.columns:
                         final_dummies[dummy_col] = dummies[dummy_col]
-                
+
                 # Mettre 1 dans la colonne UNKNOWN pour les nouvelles modalités
                 if unknown_mask.any():
-                    final_dummies.loc[unknown_mask, f'{col}_UNKNOWN'] = 1
-                
+                    final_dummies.loc[unknown_mask, f"{col}_UNKNOWN"] = 1
+
                 X_encoded = pd.concat([X_encoded, final_dummies], axis=1)
                 X_encoded = X_encoded.drop(columns=[col])
-        
+
         return X_encoded
 
 
 def create_encoding_pipeline():
-    return Pipeline([
-        ('encoder', CategoricalEncoder())
-    ])
-
-
+    return Pipeline([("encoder", CategoricalEncoder())])
 
 
 # ========== TRANSFORMER 4 : SCALING ==========
 
+
 class FeatureScaler(BaseEstimator, TransformerMixin):
     """Normalise les features"""
-    
-    def __init__(self, method='standard'):
+
+    def __init__(self, method="standard"):
         self.method = method
-    
+
     def fit(self, X, y=None):
-        if self.method == 'standard':
+        if self.method == "standard":
             self.scaler_ = StandardScaler()  # ← Attribut avec underscore
-        elif self.method == 'robust':
+        elif self.method == "robust":
             self.scaler_ = RobustScaler()
         else:
             raise ValueError("method doit être 'standard' ou 'robust'")
-        
+
         self.scaler_.fit(X)
         self.columns_ = X.columns.tolist()
-        
+
         return self
-    
+
     def transform(self, X):
         X_scaled = self.scaler_.transform(X)
         return pd.DataFrame(X_scaled, columns=self.columns_, index=X.index)
 
 
-def create_scaling_pipeline(method='standard'):
-    return Pipeline([
-        ('scaler', FeatureScaler(method=method))
-    ])
+def create_scaling_pipeline(method="standard"):
+    return Pipeline([("scaler", FeatureScaler(method=method))])
